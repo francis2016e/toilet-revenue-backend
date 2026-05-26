@@ -66,6 +66,44 @@ router.get('/summary', async (req, res) => {
   }
 });
 
+
+// ─── PUT: Edit and update an existing record ─────────────────────────────────
+router.put('/:id', async (req, res) => {
+  try {
+    const { date, day, totalAmountPerDay, expensesDescription, totalExpensesPerDay } = req.body;
+
+    // Recalculate remaining balance
+    const remainingBalancePerDay =
+      Number(totalAmountPerDay) - Number(totalExpensesPerDay);
+
+    // Update the record
+    const updated = await Revenue.findByIdAndUpdate(
+      req.params.id,
+      {
+        date,
+        day,
+        totalAmountPerDay:   Number(totalAmountPerDay),
+        expensesDescription,
+        totalExpensesPerDay: Number(totalExpensesPerDay),
+        remainingBalancePerDay
+      },
+      { new: true }
+    );
+
+    if (!updated) return res.status(404).json({ error: 'Record not found' });
+
+    // Recalculate all cumulative totals for this terminal after edit
+    await recalculateCumulative(updated.terminal);
+
+    // Regenerate Excel file
+    await generateExcelForTerminal(updated.terminal);
+
+    res.json({ message: 'Record updated successfully!', updated });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // DELETE - Remove a record and recalculate
 router.delete('/:id', async (req, res) => {
   try {
