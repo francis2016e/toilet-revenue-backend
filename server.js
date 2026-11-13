@@ -22,9 +22,8 @@ const corsOptions = {
   credentials:    true
 };
 
-// CORS first, then preflight handling
+// CORS handles preflight (OPTIONS) requests automatically
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
 
 app.use(express.json());
 
